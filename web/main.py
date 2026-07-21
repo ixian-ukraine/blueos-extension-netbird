@@ -71,4 +71,5 @@ app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     # Run uvicorn with logging disabled so loguru can handle it.
-    uvicorn.run(app, host="0.0.0.0", port=9131, log_config=None)
+    # 9132 (ZeroTier's BlueOS extension already uses 9131 on the host network).
+    uvicorn.run(app, host="0.0.0.0", port=9132, log_config=None)

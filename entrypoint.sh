@@ -43,7 +43,7 @@ EOF
 chmod +x /healthcheck.sh
 
 # 4. Launch the web UI (always available so the operator can configure/connect).
-log "Starting web UI on :9131"
+log "Starting web UI on :9132"
 ( cd /web && python main.py ) &
 
 # 5. Bring up NetBird. `netbird up` reads NB_SETUP_KEY / NB_MANAGEMENT_URL from

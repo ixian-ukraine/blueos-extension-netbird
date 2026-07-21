@@ -30,7 +30,7 @@ settings by setting the env vars `NB_SETUP_KEY` and (optionally) `NB_MANAGEMENT_
 
 - **Daemon:** the container starts `netbird service run` (background), waits until
   `netbird status --check live` succeeds, then launches the web UI.
-- **Web UI** (`:9131`, FastAPI + Vue): `POST /v1.0/connect` (`netbird up --setup-key …
+- **Web UI** (`:9132`, FastAPI + Vue): `POST /v1.0/connect` (`netbird up --setup-key …
   [--management-url …]`), `POST /v1.0/disconnect` (`netbird down`), `GET /v1.0/status`
   (`netbird status --json`).
 - **Persistence:** config/state live in `/var/lib/netbird`, bind-mounted from
@@ -59,7 +59,7 @@ settings by setting the env vars `NB_SETUP_KEY` and (optionally) `NB_MANAGEMENT_
 
 ## Ports & permissions
 
-- **9131** — web UI / API.
+- **9132** — web UI / API (ZeroTier's extension uses 9131; nb-vpn uses 9132 so both can run together).
 - Runs `Privileged`, `NetworkMode: host`, `CapAdd: [NET_ADMIN, SYS_ADMIN]`, with the
   `/dev/net/tun` device (WireGuard needs a TUN interface).
 
