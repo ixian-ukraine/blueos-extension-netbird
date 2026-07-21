@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NB VPN</title>
+  <script src="vue.js"></script>
+  <script src="axios.min.js"></script>
+  <link rel="stylesheet" href="pico.min.css">
+  <style>
+    .status-badge { display:inline-block; padding:0.25rem 0.75rem; border-radius:1rem; font-size:0.875rem; }
+    .status-online { background:#d1fae5; color:#065f46; }
+    .status-offline { background:#fee2e2; color:#991b1b; }
+    .card { padding:1rem; margin-bottom:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+    .grid-2 { display:grid; grid-template-columns:1fr auto; gap:0.5rem; align-items:center; }
+    .btn-sm { padding:0.25rem 0.75rem; font-size:0.875rem; }
+    .btn-danger { background:#ef4444; color:white; }
+    .btn-danger:hover { background:#dc2626; }
+    .kv { display:grid; grid-template-columns:auto 1fr; gap:0.25rem 1rem; font-size:0.9rem; }
+    .kv dt { color:#9ca3af; }
+    .mono { font-family:monospace; }
+    pre.raw { white-space:pre-wrap; font-size:0.8rem; background:rgb(39,41,44); padding:0.75rem; border-radius:0.25rem; }
+    .muted { color:#9ca3af; font-size:0.85rem; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <main class="container">
+      <div class="grid-2">
+        <h2>NB VPN</h2>
+        <span :class="['status-badge', connected ? 'status-online' : 'status-offline']">
+          {{ connected ? 'CONNECTED' : 'DISCONNECTED' }}
+        </span>
+      </div>
+
+      <!-- Connection status -->
+      <div class="card">
+        <h4>Status</h4>
+        <dl class="kv" v-if="parsed">
+          <dt>Management</dt><dd>{{ mgmtConnected ? 'connected' : 'disconnected' }} <span class="muted mono">{{ mgmtUrl }}</span></dd>
+          <dt>Signal</dt><dd>{{ signalConnected ? 'connected' : 'disconnected' }}</dd>
+          <dt>NetBird IP</dt><dd class="mono">{{ netbirdIp || '-' }}</dd>
+          <dt>FQDN</dt><dd class="mono">{{ fqdn || '-' }}</dd>
+          <dt>Peers</dt><dd>{{ peersConnected }} / {{ peersTotal }} connected</dd>
+          <dt>Version</dt><dd class="mono">{{ daemonVersion || '-' }}</dd>
+        </dl>
+        <pre class="raw" v-else>{{ rawStatus || 'Loading…' }}</pre>
+        <button class="btn-sm btn-danger" style="margin-top:0.75rem" @click.prevent="disconnect" :disabled="busy">
+          Disconnect
+        </button>
+      </div>
+
+      <!-- Connect -->
+      <div class="card">
+        <h4>Connect</h4>
+        <label>Setup key
+          <input type="password" v-model="setupKey" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" autocomplete="off">
+        </label>
+        <label>Management URL <span class="muted">(optional — blank uses NetBird cloud)</span>
+          <input type="text" v-model="managementUrl" placeholder="https://netbird.example.com" autocomplete="off">
+        </label>
+        <button class="btn-sm" style="margin-top:0.5rem" @click.prevent="connect" :disabled="busy || !setupKey">
+          {{ busy ? 'Connecting…' : 'Connect' }}
+        </button>
+        <p class="muted" v-if="message" style="margin-top:0.5rem">{{ message }}</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    new Vue({
+      el: "#app",
+      data() {
+        return {
+          rawStatus: '',
+          parsed: null,
+          setupKey: '',
+          managementUrl: '',
+          busy: false,
+          message: '',
+        };
+      },
+      computed: {
+        mgmtConnected() { return !!(this.parsed && this.parsed.management && this.parsed.management.connected); },
+        signalConnected() { return !!(this.parsed && this.parsed.signal && this.parsed.signal.connected); },
+        connected() { return this.mgmtConnected && this.signalConnected; },
+        mgmtUrl() { return (this.parsed && this.parsed.management && this.parsed.management.url) || ''; },
+        netbirdIp() { return (this.parsed && this.parsed.netbirdIp) || ''; },
+        fqdn() { return (this.parsed && this.parsed.fqdn) || ''; },
+        daemonVersion() { return (this.parsed && this.parsed.daemonVersion) || ''; },
+        peersTotal() { return (this.parsed && this.parsed.peers && this.parsed.peers.total) || 0; },
+        peersConnected() { return (this.parsed && this.parsed.peers && this.parsed.peers.connected) || 0; },
+      },
+      methods: {
+        refreshStatus() {
+          axios.get('/v1.0/status').then(r => {
+            this.rawStatus = r.data;
+            try {
+              this.parsed = (typeof r.data === 'object') ? r.data : JSON.parse(r.data);
+            } catch (e) {
+              this.parsed = null; // daemon returned plain text (e.g. not configured yet)
+            }
+          }).catch(() => { this.parsed = null; this.rawStatus = 'Unable to reach the daemon.'; });
+        },
+        connect() {
+          if (!this.setupKey) return;
+          this.busy = true; this.message = '';
+          axios.post('/v1.0/connect', {
+            setup_key: this.setupKey,
+            management_url: this.managementUrl || null,
+          }).then(r => {
+            this.message = (r.data || '').toString().trim() || 'Connect requested.';
+            this.setupKey = '';
+          }).catch(e => {
+            this.message = 'Error: ' + (e.response?.data?.detail || e.message);
+          }).finally(() => { this.busy = false; this.refreshStatus(); });
+        },
+        disconnect() {
+          if (!confirm('Disconnect from the NetBird network?')) return;
+          this.busy = true; this.message = '';
+          axios.post('/v1.0/disconnect').then(r => {
+            this.message = (r.data || '').toString().trim() || 'Disconnected.';
+          }).catch(e => {
+            this.message = 'Error: ' + (e.response?.data?.detail || e.message);
+          }).finally(() => { this.busy = false; this.refreshStatus(); });
+        },
+      },
+      mounted() {
+        this.refreshStatus();
+        setInterval(this.refreshStatus, 5000);
+      }
+    });
+  </script>
+</body>
+</html>
