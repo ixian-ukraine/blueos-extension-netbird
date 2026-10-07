@@ -1,18 +1,23 @@
-name: Deploy BlueOS Extension Image
+name: Publish BlueOS extension
 
 on:
   push:
-  pull_request:
+    tags: ['[0-9]*', 'v[0-9]*']
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  deploy-docker-image:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy BlueOS Extension
-        uses: BlueOS-community/Deploy-BlueOS-Extension@v1
-        with:
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          image-name: 'nb-vpn'
+  publish:
+    uses: ixian-ukraine/blueos-extensions/.github/workflows/publish-extension.yml@main
+    with:
+      identifier: ixian-ukraine.netbird
+      name: NetBird VPN
+      description: NetBird WireGuard mesh VPN connectivity for BlueOS, with cloud and self-hosted management support.
+      web-port: 9132

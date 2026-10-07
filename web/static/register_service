@@ -2,8 +2,8 @@
     "name":"NB VPN",
     "description":"NetBird (WireGuard mesh VPN) connectivity for BlueOS",
     "icon":"mdi-vpn",
-    "company":"Pinnokio",
+    "company":"Ixian Ukraine",
     "version":"0.74.7",
-    "webpage":"https://github.com/pinnokio/nb-vpn",
+    "webpage":"https://github.com/ixian-ukraine/blueos-extension-netbird",
     "api":"/v1.0/docs"
 }

@@ -2,6 +2,8 @@
 FROM python:3.11-slim-bookworm
 
 ARG NETBIRD_VERSION=0.74.7
+LABEL version="0.74.7"
+LABEL org.opencontainers.image.source="https://github.com/ixian-ukraine/blueos-extension-netbird"
 
 # NetBird's Debian package postinst calls systemctl, which doesn't exist in a
 # container. A no-op shim lets the install succeed; we run the daemon ourselves
@@ -55,18 +57,17 @@ LABEL authors='[\
     }\
 ]'
 LABEL company='{\
-        "about": "",\
-        "name": "Pinnokio",\
-        "email": "pinnokio@users.noreply.github.com"\
+        "about": "NetBird VPN integration for BlueOS",\
+        "name": "Ixian Ukraine"\
     }'
 LABEL type="other"
 LABEL tags='[\
         "communication"\
     ]'
-LABEL readme='https://raw.githubusercontent.com/pinnokio/nb-vpn/{tag}/README.md'
+LABEL readme='https://raw.githubusercontent.com/ixian-ukraine/blueos-extension-netbird/{tag}/README.md'
 LABEL links='{\
-        "website": "https://github.com/pinnokio/nb-vpn",\
-        "support": "https://github.com/pinnokio/nb-vpn/issues"\
+        "website": "https://github.com/ixian-ukraine/blueos-extension-netbird",\
+        "support": "https://github.com/ixian-ukraine/blueos-extension-netbird/issues"\
     }'
 LABEL requirements="core >= 1.1"
 

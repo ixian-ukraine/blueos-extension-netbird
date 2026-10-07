@@ -10,6 +10,16 @@ to NetBird's setup-key + management-URL model.
 
 ## Setup
 
+In BlueOS, open **Extensions → Settings (gear) → Extensions Manifest → +** and add
+this enabled source:
+
+```text
+https://raw.githubusercontent.com/ixian-ukraine/blueos-extensions/main/manifest.json
+```
+
+Install **NetBird VPN** (`ixian-ukraine.netbird`). The image is
+`ghcr.io/ixian-ukraine/blueos-extension-netbird:0.74.7`, published for **Linux ARM64**.
+
 1. In your NetBird dashboard (cloud `app.netbird.io`, or your **self-hosted** server),
    create a **setup key** (Settings → Setup Keys). Reusable keys are convenient for a fleet.
 2. Install this extension on the vehicle.
@@ -50,9 +60,9 @@ settings by setting the env vars `NB_SETUP_KEY` and (optionally) `NB_MANAGEMENT_
 - **`NB_CONFIG=/var/lib/netbird/config.json`**: the APT package otherwise defaults
   config to `/etc/netbird/`, which is *not* on the persistent bind mount — this keeps
   the config with the state so it persists.
-- **Auto-connect is guarded**: `netbird up` only runs on start when `NB_SETUP_KEY` is
-  set or a config already exists, so a fresh install never blocks on interactive login;
-  the web UI drives the first connection.
+- **Auto-connect is bounded**: after launching the web UI, startup attempts
+  `netbird up` with a 90-second timeout. It uses environment credentials or the
+  persisted registration; the web UI is available to configure a fresh install.
 - **Healthcheck = daemon liveness** (`netbird status --check live`), so the extension
   reports healthy right after install, before it's configured (matching the ZeroTier
   extension's behavior).
@@ -71,12 +81,11 @@ docker build -t nb-vpn .
 docker build --build-arg NETBIRD_VERSION=0.74.7 -t nb-vpn .
 ```
 
-Multi-arch build/publish is handled by `.github/workflows/deploy.yml`
-(`BlueOS-community/Deploy-BlueOS-Extension`, image name `nb-vpn`).
+## Publishing
 
-## TODO before publishing
+Push a SemVer tag to run `.github/workflows/deploy.yml`. It builds and smoke-tests
+the ARM64 image, publishes to GHCR using `GITHUB_TOKEN`, and attaches
+`blueos-manifest.json` to the GitHub release. No Docker Hub credentials are needed.
 
-- Update the repo/owner placeholders (`pinnokio/nb-vpn`) in the `Dockerfile` labels,
-  `register_service`, and this README to the real GitHub repo.
-- Set `DOCKER_USERNAME` / `DOCKER_PASSWORD` (and, for Bazaar, a `BCLOUD_PAT` +
-  extension UUID) in the repo's Actions secrets.
+The [Ixian catalog](https://github.com/ixian-ukraine/blueos-extensions) collects
+releases hourly; its **Refresh catalog** workflow can also be run manually.
